@@ -1,10 +1,14 @@
-import {IIdentity, IQueryClause} from '@essential-projects/core_contracts';
-import {InternalServerError, NotFoundError} from '@essential-projects/errors_ts';
+import {IIdentity} from '@essential-projects/core_contracts';
 import {IHttpClient} from '@essential-projects/http_contracts';
 import {ExternalAccessor, ManagementApiClientService} from '@process-engine/management_api_client';
 import {ManagementContext, ProcessModelExecution} from '@process-engine/management_api_contracts';
 import {IDiagram, ISolution} from '@process-engine/solutionexplorer.contracts';
 import {ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repository.contracts';
+
+interface IParsedDiagramUri {
+  baseRoute: string;
+  processModelKey: string;
+}
 
 export class SolutionExplorerManagementApiRepository implements ISolutionExplorerRepository {
 
@@ -22,10 +26,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
       pathspec = pathspec.substr(0, pathspec.length - 1);
     }
 
-    const externalAccessor: ExternalAccessor = new ExternalAccessor(this._httpClient);
-    (externalAccessor as any).baseRoute = `${pathspec}/${(externalAccessor as any).baseRoute}`;
-
-    const managementApi: ManagementApiClientService = new ManagementApiClientService(externalAccessor);
+    const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
     const managementApiContext: ManagementContext = this._getManagementApiContext(identity);
 
     // test connection
@@ -36,82 +37,53 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async getDiagrams(): Promise<Array<IDiagram>> {
-    const processModels: ProcessModelExecution.ProcessModelList = await this._managementApi.getProcessModels(this._managementApiContext);
+    const processModels: ProcessModelList = await this._managementApi.getProcessModels(this._managementApiContext);
 
-    const diagrams: Array<IDiagram> = processModels.processModels.map(this._mapProcessModelToDiagram);
+    const diagrams: Array<IDiagram> = processModels.processModels.map((processModel: ProcessModelExecution.ProcessModel) => {
+      return this._mapProcessModelToDiagram(processModel, this._managementApi);
+    });
 
     return diagrams;
   }
 
   public async getDiagramByName(diagramName: string): Promise<IDiagram> {
-    const query: IQueryClause = {
-      attribute: 'name',
-      operator: '=',
-      value: diagramName,
-    };
+    const processModel: ProcessModelExecution.ProcessModel = await this._managementApi.getProcessModelById(this._managementApiContext, diagramName);
 
-    const url: string = `${this._baseUri}/?query=${JSON.stringify(query)}`;
-
-    const response: BodyInit = await fetch(url)
-      .then((res: Response) => res.json());
-    const processDefList: Array<IProcessDefEntity> = response.data;
-
-    const diagrams: IDiagram = this._mapProcessDefToDiagram(processDefList[0]);
+    const diagrams: IDiagram = this._mapProcessModelToDiagram(processModel, this._managementApi);
 
     return diagrams;
   }
 
   public async openSingleDiagram(pathToDiagram: string, identity: IIdentity): Promise<IDiagram> {
-    const response: BodyInit = await fetch(pathToDiagram)
-      .then((res: Response) => res.json());
-    const processDef: IProcessDefEntity = response;
-    const diagram: IDiagram = await this._mapProcessDefToDiagram(processDef);
+    const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(pathToDiagram);
+
+    const managementApi: ManagementApiClientService = this._createManagementClient(parsedDiagramUri.baseRoute);
+    const processModel: ProcessModelExecution.ProcessModel = managementApi.getProcessModelById(this._managementApiContext, parsedDiagramUri.processModelKey);
+
+    const diagram: IDiagram = this._mapProcessModelToDiagram(processModel, managementApi);
 
     return diagram;
   }
 
   public async saveSingleDiagram(diagramToSave: IDiagram, identity: IIdentity, pathspec?: string): Promise<IDiagram> {
-    const options: RequestInit = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-          xml: diagramToSave.xml,
-      }),
-    };
-
-    let response: BodyInit;
-    try {
-      response = await fetch(`${diagramToSave.uri}/updateBpmn`, options)
-        .then((res: Response) => res.json());
-    } catch (e) {
-      throw new NotFoundError('Datastore is not reachable.');
-    }
-
-    const body: {result: boolean} = response;
-    const saveNotSucessfull: boolean = body.result === false;
-
-    if (saveNotSucessfull) {
-      throw new InternalServerError('Diagram could not be saved.');
-    }
-
-    return diagramToSave;
+    throw new Error('Not implemented.');
   }
 
   public async saveSolution(solution: ISolution, pathspec?: string): Promise<void> {
+    throw new Error('Not implemented.');
+
     if (pathspec) {
 
-      try {
-        await this.openPath(pathspec, this._identity);
-      } catch (e) {
-        throw new NotFoundError('Given path is not reachable.');
-      }
+      const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
+
+      // TODO: Wait for the management api to support this
 
       solution.uri = pathspec;
       solution.diagrams.forEach((diagram: IDiagram) => {
         diagram.uri = `${pathspec}/datastore/ProcessDef/${diagram.id}`;
       });
+
+      return;
     }
 
     const promises: Array<Promise<void>> = solution.diagrams.map((diagram: IDiagram) => {
@@ -122,38 +94,54 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async saveDiagram(diagramToSave: IDiagram, pathspec?: string): Promise<void> {
-    const options: RequestInit = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-          xml: diagramToSave.xml,
-      }),
-    };
+    throw new Error('Not implemented.');
 
-    let response: BodyInit;
-    try {
-      response = await fetch(`${diagramToSave.uri}/updateBpmn`, options)
-        .then((res: Response) => res.json());
-    } catch (e) {
-      throw new NotFoundError('Datastore is not reachable.');
+    if (pathspec) {
+      // TODO
+
+      const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
+
+      return;
     }
 
-    const body: {result: boolean} = response;
-    const saveNotSucessfull: boolean = body.result === false;
-
-    if (saveNotSucessfull) {
-      throw new InternalServerError('Diagram could not be saved.');
-    }
+    // TODO
   }
 
-  private _mapProcessModelToDiagram = (processModel: ProcessModelExecution.ProcessModel): IDiagram => {
+  private _createManagementClient(baseRoute: string): ManagementApiClientService {
+    const externalAccessor: ExternalAccessor = new ExternalAccessor(this._httpClient);
+    (externalAccessor as any).baseUrl = `${baseRoute}/${(externalAccessor as any).baseUrl}`;
+
+    const managementApi: ManagementApiClientService = new ManagementApiClientService(externalAccessor);
+
+    return managementApi;
+  }
+
+  private _getBaseRoute(managementApi: ManagementApiClientService): string {
+    return (managementApi.managementApiAccessor as any).baseUrl;
+  }
+
+  private _parseDiagramUri(uri: string): IParsedDiagramUri {
+    const lastIndexOfSlash: number = uri.lastIndexOf('/');
+
+    const baseRoute: string = uri.substring(0, lastIndexOfSlash);
+    const processModelKey: string = uri.substring(lastIndexOfSlash + 1, uri.length);
+
+    return {
+      baseRoute,
+      processModelKey,
+    };
+  }
+
+  private _mapProcessModelToDiagram(processModel: ProcessModelExecution.ProcessModel, managementApi: ManagementApiClientService): IDiagram {
+    const baseRoute: string = this._getBaseRoute(managementApi);
+
+    const diagramUri: string =  `${baseRoute}/${processModel.key}`;
+
     const diagram: IDiagram = {
-      name: processDef.,
-      xml: processDef.xml,
-      id: processDef.id,
-      uri: `${this._baseUri}/${processDef.id}`,
+      name: processModel.key,
+      xml: processModel.xml,
+      id: processModel.key,
+      uri: diagramUri,
     };
 
     return diagram;
