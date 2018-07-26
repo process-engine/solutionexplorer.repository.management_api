@@ -37,7 +37,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async getDiagrams(): Promise<Array<IDiagram>> {
-    const processModels: ProcessModelList = await this._managementApi.getProcessModels(this._managementApiContext);
+    const processModels: ProcessModelExecution.ProcessModelList = await this._managementApi.getProcessModels(this._managementApiContext);
 
     const diagrams: Array<IDiagram> = processModels.processModels.map((processModel: ProcessModelExecution.ProcessModel) => {
       return this._mapProcessModelToDiagram(processModel, this._managementApi);
@@ -58,7 +58,9 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(pathToDiagram);
 
     const managementApi: ManagementApiClientService = this._createManagementClient(parsedDiagramUri.baseRoute);
-    const processModel: ProcessModelExecution.ProcessModel = managementApi.getProcessModelById(this._managementApiContext, parsedDiagramUri.processModelKey);
+    const processModel: ProcessModelExecution.ProcessModel = await
+      managementApi
+      .getProcessModelById(this._managementApiContext, parsedDiagramUri.processModelKey);
 
     const diagram: IDiagram = this._mapProcessModelToDiagram(processModel, managementApi);
 
@@ -66,21 +68,43 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async saveSingleDiagram(diagramToSave: IDiagram, identity: IIdentity, pathspec?: string): Promise<IDiagram> {
-    throw new Error('Not implemented.');
-  }
+    const payload: ProcessModelExecution.UpdateProcessModelRequestPayload = {
+      overwriteExisting: true,
+      xml: diagramToSave.xml,
+    };
 
-  public async saveSolution(solution: ISolution, pathspec?: string): Promise<void> {
-    throw new Error('Not implemented.');
+    const managementApiContext: ManagementContext = this._getManagementApiContext(identity);
 
     if (pathspec) {
 
       const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
+      await managementApi.updateProcessModelById(managementApiContext, diagramToSave.id, payload);
 
-      // TODO: Wait for the management api to support this
+      return;
+    }
+
+    const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(diagramToSave.uri);
+    await this._managementApi.updateProcessModelById(managementApiContext, parsedDiagramUri.processModelKey, payload);
+  }
+
+  public async saveSolution(solution: ISolution, pathspec?: string): Promise<void> {
+    if (pathspec) {
+
+      const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
 
       solution.uri = pathspec;
       solution.diagrams.forEach((diagram: IDiagram) => {
-        diagram.uri = `${pathspec}/datastore/ProcessDef/${diagram.id}`;
+        diagram.uri = `${pathspec}/${diagram.id}`;
+      });
+
+      solution.diagrams.map((diagram: IDiagram): Promise<void> => {
+
+        const payload: ProcessModelExecution.UpdateProcessModelRequestPayload = {
+          overwriteExisting: true,
+          xml: diagram.xml,
+        };
+
+        return managementApi.updateProcessModelById(this._managementApiContext, diagram.id, payload);
       });
 
       return;
@@ -94,17 +118,21 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async saveDiagram(diagramToSave: IDiagram, pathspec?: string): Promise<void> {
-    throw new Error('Not implemented.');
+    const payload: ProcessModelExecution.UpdateProcessModelRequestPayload = {
+      overwriteExisting: true,
+      xml: diagramToSave.xml,
+    };
 
     if (pathspec) {
-      // TODO
 
       const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
+      await managementApi.updateProcessModelById(this._managementApiContext, diagramToSave.id, payload);
 
       return;
     }
 
-    // TODO
+    const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(diagramToSave.uri);
+    await this._managementApi.updateProcessModelById(this._managementApiContext, parsedDiagramUri.processModelKey, payload);
   }
 
   private _createManagementClient(baseRoute: string): ManagementApiClientService {
@@ -135,7 +163,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   private _mapProcessModelToDiagram(processModel: ProcessModelExecution.ProcessModel, managementApi: ManagementApiClientService): IDiagram {
     const baseRoute: string = this._getBaseRoute(managementApi);
 
-    const diagramUri: string =  `${baseRoute}/${processModel.key}`;
+    const diagramUri: string = `${baseRoute}/${processModel.key}`;
 
     const diagram: IDiagram = {
       name: processModel.key,
