@@ -1,0 +1,36 @@
+{
+  "name": "@process-engine/solutionexplorer.repository.management_api",
+  "version": "0.0.1",
+  "description": "The SolutionExplorer repository for a processengine management api.",
+  "main": "dist/amd/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "build": "gulp build",
+    "prepare": "npm run build",
+    "build-doc": "gulp doc",
+    "build-schemas": "gulp typescript-schema",
+    "lint": "gulp lint",
+    "test": "gulp test"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@essential-projects/core_contracts": "^3.0.0",
+    "@essential-projects/errors_ts": "^1.2.0",
+    "@essential-projects/http_contracts": "^2.0.2",
+    "@process-engine/management_api_client": "^0.5.0",
+    "@process-engine/management_api_contracts": "^0.6.0",
+    "@process-engine/solutionexplorer.contracts": "1.0.0",
+    "@process-engine/solutionexplorer.repository.contracts": "1.0.0"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.1.1",
+    "@essential-projects/tslint-config": "1.0.0",
+    "gulp": "^3.9.1",
+    "gulptraum": "^2.3.0",
+    "gulptraum-typescript": "^1.5.0",
+    "tsconfig": "^7.0.0",
+    "tslint": "^5.10.0",
+    "typescript": "^2.8.3"
+  }
+}
