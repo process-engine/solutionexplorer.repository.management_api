@@ -7,7 +7,7 @@ import {ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repo
 
 interface IParsedDiagramUri {
   baseRoute: string;
-  processModelKey: string;
+  processModelId: string;
 }
 
 export class SolutionExplorerManagementApiRepository implements ISolutionExplorerRepository {
@@ -60,7 +60,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     const managementApi: ManagementApiClientService = this._createManagementClient(parsedDiagramUri.baseRoute);
     const processModel: ProcessModelExecution.ProcessModel = await
       managementApi
-      .getProcessModelById(this._managementApiContext, parsedDiagramUri.processModelKey);
+      .getProcessModelById(this._managementApiContext, parsedDiagramUri.processModelId);
 
     const diagram: IDiagram = this._mapProcessModelToDiagram(processModel, managementApi);
 
@@ -84,7 +84,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     }
 
     const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(diagramToSave.uri);
-    await this._managementApi.updateProcessModelById(managementApiContext, parsedDiagramUri.processModelKey, payload);
+    await this._managementApi.updateProcessModelById(managementApiContext, parsedDiagramUri.processModelId, payload);
   }
 
   public async saveSolution(solution: ISolution, pathspec?: string): Promise<void> {
@@ -132,7 +132,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     }
 
     const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(diagramToSave.uri);
-    await this._managementApi.updateProcessModelById(this._managementApiContext, parsedDiagramUri.processModelKey, payload);
+    await this._managementApi.updateProcessModelById(this._managementApiContext, parsedDiagramUri.processModelId, payload);
   }
 
   private _createManagementClient(baseRoute: string): ManagementApiClientService {
@@ -152,23 +152,23 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     const lastIndexOfSlash: number = uri.lastIndexOf('/');
 
     const baseRoute: string = uri.substring(0, lastIndexOfSlash);
-    const processModelKey: string = uri.substring(lastIndexOfSlash + 1, uri.length);
+    const processModelId: string = uri.substring(lastIndexOfSlash + 1, uri.length);
 
     return {
       baseRoute,
-      processModelKey,
+      processModelId,
     };
   }
 
   private _mapProcessModelToDiagram(processModel: ProcessModelExecution.ProcessModel, managementApi: ManagementApiClientService): IDiagram {
     const baseRoute: string = this._getBaseRoute(managementApi);
 
-    const diagramUri: string = `${baseRoute}/${processModel.key}`;
+    const diagramUri: string = `${baseRoute}/${processModel.id}`;
 
     const diagram: IDiagram = {
-      name: processModel.key,
+      name: processModel.id,
       xml: processModel.xml,
-      id: processModel.key,
+      id: processModel.id,
       uri: diagramUri,
     };
 
