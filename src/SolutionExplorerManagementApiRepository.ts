@@ -1,7 +1,7 @@
-import {IIdentity} from '@essential-projects/core_contracts';
 import {IHttpClient} from '@essential-projects/http_contracts';
+import {IIdentity} from '@essential-projects/iam_contracts';
 import {ExternalAccessor, ManagementApiClientService} from '@process-engine/management_api_client';
-import {ManagementContext, ProcessModelExecution} from '@process-engine/management_api_contracts';
+import {ProcessModelExecution} from '@process-engine/management_api_contracts';
 import {IDiagram, ISolution} from '@process-engine/solutionexplorer.contracts';
 import {ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repository.contracts';
 
@@ -15,7 +15,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   private _httpClient: IHttpClient;
 
   private _managementApi: ManagementApiClientService;
-  private _managementApiContext: ManagementContext;
+  private _identity: IIdentity;
 
   constructor(httpClient: IHttpClient) {
     this._httpClient = httpClient;
@@ -27,17 +27,15 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     }
 
     const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
-    const managementApiContext: ManagementContext = this._getManagementApiContext(identity);
-
     // test connection
-    await managementApi.getProcessModels(managementApiContext);
+    await managementApi.getProcessModels(identity);
 
     this._managementApi = managementApi;
-    this._managementApiContext = managementApiContext;
+    this._identity = identity;
   }
 
   public async getDiagrams(): Promise<Array<IDiagram>> {
-    const processModels: ProcessModelExecution.ProcessModelList = await this._managementApi.getProcessModels(this._managementApiContext);
+    const processModels: ProcessModelExecution.ProcessModelList = await this._managementApi.getProcessModels(this._identity);
 
     const diagrams: Array<IDiagram> = processModels.processModels.map((processModel: ProcessModelExecution.ProcessModel) => {
       return this._mapProcessModelToDiagram(processModel, this._managementApi);
@@ -47,7 +45,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async getDiagramByName(diagramName: string): Promise<IDiagram> {
-    const processModel: ProcessModelExecution.ProcessModel = await this._managementApi.getProcessModelById(this._managementApiContext, diagramName);
+    const processModel: ProcessModelExecution.ProcessModel = await this._managementApi.getProcessModelById(this._identity, diagramName);
 
     const diagrams: IDiagram = this._mapProcessModelToDiagram(processModel, this._managementApi);
 
@@ -60,7 +58,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     const managementApi: ManagementApiClientService = this._createManagementClient(parsedDiagramUri.baseRoute);
     const processModel: ProcessModelExecution.ProcessModel = await
       managementApi
-      .getProcessModelById(this._managementApiContext, parsedDiagramUri.processModelId);
+      .getProcessModelById(this._identity, parsedDiagramUri.processModelId);
 
     const diagram: IDiagram = this._mapProcessModelToDiagram(processModel, managementApi);
 
@@ -68,23 +66,21 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async saveSingleDiagram(diagramToSave: IDiagram, identity: IIdentity, pathspec?: string): Promise<IDiagram> {
-    const payload: ProcessModelExecution.UpdateProcessModelRequestPayload = {
+    const payload: ProcessModelExecution.UpdateProcessDefinitionsRequestPayload = {
       overwriteExisting: true,
       xml: diagramToSave.xml,
     };
 
-    const managementApiContext: ManagementContext = this._getManagementApiContext(identity);
-
     if (pathspec) {
 
       const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
-      await managementApi.updateProcessModelById(managementApiContext, diagramToSave.id, payload);
+      await managementApi.updateProcessDefinitionsByName(identity, diagramToSave.id, payload);
 
       return;
     }
 
     const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(diagramToSave.uri);
-    await this._managementApi.updateProcessModelById(managementApiContext, parsedDiagramUri.processModelId, payload);
+    await this._managementApi.updateProcessDefinitionsByName(identity, parsedDiagramUri.processModelId, payload);
   }
 
   public async saveSolution(solution: ISolution, pathspec?: string): Promise<void> {
@@ -99,12 +95,12 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
       solution.diagrams.map((diagram: IDiagram): Promise<void> => {
 
-        const payload: ProcessModelExecution.UpdateProcessModelRequestPayload = {
+        const payload: ProcessModelExecution.UpdateProcessDefinitionsRequestPayload = {
           overwriteExisting: true,
           xml: diagram.xml,
         };
 
-        return managementApi.updateProcessModelById(this._managementApiContext, diagram.id, payload);
+        return managementApi.updateProcessDefinitionsByName(this._identity, diagram.id, payload);
       });
 
       return;
@@ -118,7 +114,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async saveDiagram(diagramToSave: IDiagram, pathspec?: string): Promise<void> {
-    const payload: ProcessModelExecution.UpdateProcessModelRequestPayload = {
+    const payload: ProcessModelExecution.UpdateProcessDefinitionsRequestPayload = {
       overwriteExisting: true,
       xml: diagramToSave.xml,
     };
@@ -126,13 +122,13 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     if (pathspec) {
 
       const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
-      await managementApi.updateProcessModelById(this._managementApiContext, diagramToSave.id, payload);
+      await managementApi.updateProcessDefinitionsByName(this._identity, diagramToSave.id, payload);
 
       return;
     }
 
     const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(diagramToSave.uri);
-    await this._managementApi.updateProcessModelById(this._managementApiContext, parsedDiagramUri.processModelId, payload);
+    await this._managementApi.updateProcessDefinitionsByName(this._identity, parsedDiagramUri.processModelId, payload);
   }
 
   private _createManagementClient(baseRoute: string): ManagementApiClientService {
@@ -173,15 +169,5 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     };
 
     return diagram;
-  }
-
-  private _getManagementApiContext(identity: IIdentity): ManagementContext {
-    // TODO (ph): Why does IIdentity does not have a token field?
-    const accessToken: string = (identity as any).accessToken;
-    const context: ManagementContext = {
-      identity: accessToken,
-    };
-
-    return context;
   }
 }
