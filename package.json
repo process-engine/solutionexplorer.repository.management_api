@@ -7,8 +7,6 @@
   "scripts": {
     "build": "gulp build",
     "prepare": "npm run build",
-    "build-doc": "gulp doc",
-    "build-schemas": "gulp typescript-schema",
     "lint": "gulp lint",
     "test": "gulp test"
   },
@@ -21,7 +19,7 @@
     "@process-engine/management_api_client": "^0.9.1",
     "@process-engine/management_api_contracts": "^0.10.1",
     "@process-engine/solutionexplorer.contracts": "1.0.0",
-    "@process-engine/solutionexplorer.repository.contracts": "feature~use_iam_contracts",
+    "@process-engine/solutionexplorer.repository.contracts": "2.0.0",
     "@types/express": "^4.16.0"
   },
   "devDependencies": {
