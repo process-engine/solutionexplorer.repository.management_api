@@ -133,11 +133,11 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async renameDiagram(diagram: IDiagram, newName: string): Promise<IDiagram> {
-    throw new NotImplementedError('Renaming diagrams is not suppored.');
+    throw new NotImplementedError('Renaming diagrams is currently not suppored.');
   }
 
   public async deleteDiagram(diagram: IDiagram): Promise<void> {
-    throw new NotImplementedError('Deleting diagrams is not suppored.');
+    throw new NotImplementedError('Deleting diagrams is currently not suppored.');
   }
 
   private _createManagementClient(baseRoute: string): ManagementApiClientService {
