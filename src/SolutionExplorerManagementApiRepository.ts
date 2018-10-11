@@ -1,3 +1,4 @@
+import {NotImplementedError} from '@essential-projects/errors_ts';
 import {IHttpClient} from '@essential-projects/http_contracts';
 import {IIdentity} from '@essential-projects/iam_contracts';
 import {ExternalAccessor, ManagementApiClientService} from '@process-engine/management_api_client';
@@ -129,6 +130,14 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
     const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(diagramToSave.uri);
     await this._managementApi.updateProcessDefinitionsByName(this._identity, parsedDiagramUri.processModelId, payload);
+  }
+
+  public async renameDiagram(diagram: IDiagram, newName: string): Promise<IDiagram> {
+    throw new NotImplementedError('Renaming diagrams is not suppored.');
+  }
+
+  public async deleteDiagram(diagram: IDiagram): Promise<void> {
+    throw new NotImplementedError('Deleting diagrams is not suppored.');
   }
 
   private _createManagementClient(baseRoute: string): ManagementApiClientService {
