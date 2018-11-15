@@ -133,7 +133,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async renameDiagram(diagram: IDiagram, newName: string): Promise<IDiagram> {
-    throw new NotImplementedError('Renaming diagrams is currently not suppored.');
+    throw new NotImplementedError('Renaming diagrams is currently not supported.');
   }
 
   public async deleteDiagram(diagram: IDiagram): Promise<void> {
