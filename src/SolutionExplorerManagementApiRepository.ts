@@ -137,7 +137,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async deleteDiagram(diagram: IDiagram): Promise<void> {
-    throw new NotImplementedError('Deleting diagrams is currently not suppored.');
+    this._managementApi.deleteProcessDefinitionsByProcessModelId(this._identity, diagram.id);
   }
 
   private _createManagementClient(baseRoute: string): ManagementApiClientService {
