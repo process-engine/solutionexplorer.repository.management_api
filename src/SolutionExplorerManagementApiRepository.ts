@@ -53,37 +53,6 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     return diagrams;
   }
 
-  public async openSingleDiagram(pathToDiagram: string, identity: IIdentity): Promise<IDiagram> {
-    const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(pathToDiagram);
-
-    const managementApi: ManagementApiClientService = this._createManagementClient(parsedDiagramUri.baseRoute);
-    const processModel: ProcessModelExecution.ProcessModel = await
-      managementApi
-      .getProcessModelById(this._identity, parsedDiagramUri.processModelId);
-
-    const diagram: IDiagram = this._mapProcessModelToDiagram(processModel, managementApi);
-
-    return diagram;
-  }
-
-  public async saveSingleDiagram(diagramToSave: IDiagram, identity: IIdentity, pathspec?: string): Promise<IDiagram> {
-    const payload: ProcessModelExecution.UpdateProcessDefinitionsRequestPayload = {
-      overwriteExisting: true,
-      xml: diagramToSave.xml,
-    };
-
-    if (pathspec) {
-
-      const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
-      await managementApi.updateProcessDefinitionsByName(identity, diagramToSave.id, payload);
-
-      return;
-    }
-
-    const parsedDiagramUri: IParsedDiagramUri = this._parseDiagramUri(diagramToSave.uri);
-    await this._managementApi.updateProcessDefinitionsByName(identity, parsedDiagramUri.processModelId, payload);
-  }
-
   public async saveSolution(solution: ISolution, pathspec?: string): Promise<void> {
     if (pathspec) {
 
