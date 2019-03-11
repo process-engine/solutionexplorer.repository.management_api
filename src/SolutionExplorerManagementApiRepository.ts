@@ -2,7 +2,7 @@ import {NotImplementedError} from '@essential-projects/errors_ts';
 import {IHttpClient} from '@essential-projects/http_contracts';
 import {IIdentity} from '@essential-projects/iam_contracts';
 import {ExternalAccessor, ManagementApiClientService} from '@process-engine/management_api_client';
-import {ProcessModelExecution} from '@process-engine/management_api_contracts';
+import {DataModels} from '@process-engine/management_api_contracts';
 import {IDiagram, ISolution} from '@process-engine/solutionexplorer.contracts';
 import {ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repository.contracts';
 
@@ -17,6 +17,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   private _managementApi: ManagementApiClientService;
   private _identity: IIdentity;
+  private _externalAccessorBaseRoute: string;
 
   constructor(httpClient: IHttpClient) {
     this._httpClient = httpClient;
@@ -36,9 +37,9 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async getDiagrams(): Promise<Array<IDiagram>> {
-    const processModels: ProcessModelExecution.ProcessModelList = await this._managementApi.getProcessModels(this._identity);
+    const processModels: DataModels.ProcessModels.ProcessModelList = await this._managementApi.getProcessModels(this._identity);
 
-    const diagrams: Array<IDiagram> = processModels.processModels.map((processModel: ProcessModelExecution.ProcessModel) => {
+    const diagrams: Array<IDiagram> = processModels.processModels.map((processModel: DataModels.ProcessModels.ProcessModel) => {
       return this._mapProcessModelToDiagram(processModel, this._managementApi);
     });
 
@@ -46,7 +47,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async getDiagramByName(diagramName: string): Promise<IDiagram> {
-    const processModel: ProcessModelExecution.ProcessModel = await this._managementApi.getProcessModelById(this._identity, diagramName);
+    const processModel: DataModels.ProcessModels.ProcessModel = await this._managementApi.getProcessModelById(this._identity, diagramName);
 
     const diagrams: IDiagram = this._mapProcessModelToDiagram(processModel, this._managementApi);
 
@@ -65,7 +66,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
       solution.diagrams.map((diagram: IDiagram): Promise<void> => {
 
-        const payload: ProcessModelExecution.UpdateProcessDefinitionsRequestPayload = {
+        const payload: DataModels.ProcessModels.UpdateProcessDefinitionsRequestPayload = {
           overwriteExisting: true,
           xml: diagram.xml,
         };
@@ -84,7 +85,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async saveDiagram(diagramToSave: IDiagram, pathspec?: string): Promise<void> {
-    const payload: ProcessModelExecution.UpdateProcessDefinitionsRequestPayload = {
+    const payload: DataModels.ProcessModels.UpdateProcessDefinitionsRequestPayload = {
       overwriteExisting: true,
       xml: diagramToSave.xml,
     };
@@ -111,7 +112,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   private _createManagementClient(baseRoute: string): ManagementApiClientService {
     const externalAccessor: ExternalAccessor = new ExternalAccessor(this._httpClient);
-    (externalAccessor as any).baseUrl = `${baseRoute}/${(externalAccessor as any).baseUrl}`;
+    this._externalAccessorBaseRoute = (externalAccessor as any).baseUrl = `${baseRoute}/${(externalAccessor as any).baseUrl}`;
 
     const managementApi: ManagementApiClientService = new ManagementApiClientService(externalAccessor);
 
@@ -119,7 +120,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   private _getBaseRoute(managementApi: ManagementApiClientService): string {
-    return (managementApi.managementApiAccessor as any).baseUrl;
+    return this._externalAccessorBaseRoute;
   }
 
   private _parseDiagramUri(uri: string): IParsedDiagramUri {
@@ -134,7 +135,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     };
   }
 
-  private _mapProcessModelToDiagram(processModel: ProcessModelExecution.ProcessModel, managementApi: ManagementApiClientService): IDiagram {
+  private _mapProcessModelToDiagram(processModel: DataModels.ProcessModels.ProcessModel, managementApi: ManagementApiClientService): IDiagram {
     const baseRoute: string = this._getBaseRoute(managementApi);
 
     const diagramUri: string = `${baseRoute}/${processModel.id}`;
