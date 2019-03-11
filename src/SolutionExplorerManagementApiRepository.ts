@@ -2,7 +2,7 @@ import {NotImplementedError} from '@essential-projects/errors_ts';
 import {IHttpClient} from '@essential-projects/http_contracts';
 import {IIdentity} from '@essential-projects/iam_contracts';
 import {ExternalAccessor, ManagementApiClientService} from '@process-engine/management_api_client';
-import {ProcessModelExecution} from '@process-engine/management_api_contracts';
+import {DataModels} from '@process-engine/management_api_contracts';
 import {IDiagram, ISolution} from '@process-engine/solutionexplorer.contracts';
 import {ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repository.contracts';
 
@@ -36,9 +36,9 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async getDiagrams(): Promise<Array<IDiagram>> {
-    const processModels: ProcessModelExecution.ProcessModelList = await this._managementApi.getProcessModels(this._identity);
+    const processModels: DataModels.ProcessModels.ProcessModelList = await this._managementApi.getProcessModels(this._identity);
 
-    const diagrams: Array<IDiagram> = processModels.processModels.map((processModel: ProcessModelExecution.ProcessModel) => {
+    const diagrams: Array<IDiagram> = processModels.processModels.map((processModel: DataModels.ProcessModels.ProcessModel) => {
       return this._mapProcessModelToDiagram(processModel, this._managementApi);
     });
 
@@ -46,7 +46,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async getDiagramByName(diagramName: string): Promise<IDiagram> {
-    const processModel: ProcessModelExecution.ProcessModel = await this._managementApi.getProcessModelById(this._identity, diagramName);
+    const processModel: DataModels.ProcessModels.ProcessModel = await this._managementApi.getProcessModelById(this._identity, diagramName);
 
     const diagrams: IDiagram = this._mapProcessModelToDiagram(processModel, this._managementApi);
 
@@ -65,7 +65,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
       solution.diagrams.map((diagram: IDiagram): Promise<void> => {
 
-        const payload: ProcessModelExecution.UpdateProcessDefinitionsRequestPayload = {
+        const payload: DataModels.ProcessModels.UpdateProcessDefinitionsRequestPayload = {
           overwriteExisting: true,
           xml: diagram.xml,
         };
@@ -84,7 +84,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public async saveDiagram(diagramToSave: IDiagram, pathspec?: string): Promise<void> {
-    const payload: ProcessModelExecution.UpdateProcessDefinitionsRequestPayload = {
+    const payload: DataModels.ProcessModels.UpdateProcessDefinitionsRequestPayload = {
       overwriteExisting: true,
       xml: diagramToSave.xml,
     };
@@ -134,7 +134,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     };
   }
 
-  private _mapProcessModelToDiagram(processModel: ProcessModelExecution.ProcessModel, managementApi: ManagementApiClientService): IDiagram {
+  private _mapProcessModelToDiagram(processModel: DataModels.ProcessModels.ProcessModel, managementApi: ManagementApiClientService): IDiagram {
     const baseRoute: string = this._getBaseRoute(managementApi);
 
     const diagramUri: string = `${baseRoute}/${processModel.id}`;
