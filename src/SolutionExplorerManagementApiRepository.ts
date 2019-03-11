@@ -17,6 +17,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   private _managementApi: ManagementApiClientService;
   private _identity: IIdentity;
+  private _externalAccessorBaseRoute: string;
 
   constructor(httpClient: IHttpClient) {
     this._httpClient = httpClient;
@@ -111,7 +112,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   private _createManagementClient(baseRoute: string): ManagementApiClientService {
     const externalAccessor: ExternalAccessor = new ExternalAccessor(this._httpClient);
-    (externalAccessor as any).baseUrl = `${baseRoute}/${(externalAccessor as any).baseUrl}`;
+    this._externalAccessorBaseRoute = (externalAccessor as any).baseUrl = `${baseRoute}/${(externalAccessor as any).baseUrl}`;
 
     const managementApi: ManagementApiClientService = new ManagementApiClientService(externalAccessor);
 
@@ -119,7 +120,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   private _getBaseRoute(managementApi: ManagementApiClientService): string {
-    return (managementApi.managementApiAccessor as any).baseUrl;
+    return this._externalAccessorBaseRoute;
   }
 
   private _parseDiagramUri(uri: string): IParsedDiagramUri {
