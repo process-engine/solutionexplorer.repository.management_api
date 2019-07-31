@@ -23,19 +23,11 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     this._httpClient = httpClient;
   }
 
-  public addFileToWatch(filepath: string): void {
+  public watchFile(filepath: string, callback: (path: string) => void): void {
     throw new Error('Method not supported.');
   }
 
-  public removeFileFromWatching(filepath: string): void {
-    throw new Error('Method not supported.');
-  }
-
-  public addFileChangeCallback(callback: (path: string) => void): void {
-    throw new Error('Method not supported.');
-  }
-
-  public removeFileChangeCallback(callback: (path: string) => void): void {
+  public unwatchFile(filepath: string): void {
     throw new Error('Method not supported.');
   }
 
