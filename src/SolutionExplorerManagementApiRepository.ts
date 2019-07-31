@@ -23,7 +23,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     this._httpClient = httpClient;
   }
 
-  public watchFile(filepath: string, callback: (path: string) => void): void {
+  public watchFile(filepath: string, callback: (event: string, previousPath: string, newFilename: string) => void): void {
     throw new Error('Method not supported.');
   }
 
