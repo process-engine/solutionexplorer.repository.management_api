@@ -4,7 +4,7 @@ import {IIdentity} from '@essential-projects/iam_contracts';
 import {ExternalAccessor, ManagementApiClientService} from '@process-engine/management_api_client';
 import {DataModels} from '@process-engine/management_api_contracts';
 import {IDiagram, ISolution} from '@process-engine/solutionexplorer.contracts';
-import {ISolutionExplorerRepository, IFileChangedCallback} from '@process-engine/solutionexplorer.repository.contracts';
+import {IFileChangedCallback, ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repository.contracts';
 
 interface IParsedDiagramUri {
   baseRoute: string;
