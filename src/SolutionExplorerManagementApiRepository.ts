@@ -4,7 +4,7 @@ import {IIdentity} from '@essential-projects/iam_contracts';
 import {ExternalAccessor, ManagementApiClientService} from '@process-engine/management_api_client';
 import {DataModels} from '@process-engine/management_api_contracts';
 import {IDiagram, ISolution} from '@process-engine/solutionexplorer.contracts';
-import {ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repository.contracts';
+import {ISolutionExplorerRepository, IFileChangedCallback} from '@process-engine/solutionexplorer.repository.contracts';
 
 interface IParsedDiagramUri {
   baseRoute: string;
@@ -23,7 +23,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     this._httpClient = httpClient;
   }
 
-  public watchFile(filepath: string, callback: (event: string, previousPath: string, newFilename: string) => void): void {
+  public watchFile(filepath: string, callback: IFileChangedCallback): void {
     throw new Error('Method not supported.');
   }
 
