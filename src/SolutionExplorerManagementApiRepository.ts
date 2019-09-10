@@ -1,7 +1,7 @@
 import {NotImplementedError} from '@essential-projects/errors_ts';
 import {IHttpClient} from '@essential-projects/http_contracts';
 import {IIdentity} from '@essential-projects/iam_contracts';
-import {ExternalAccessor, ManagementApiClientService} from '@process-engine/management_api_client';
+import {ExternalAccessor, ManagementApiClient} from '@process-engine/management_api_client';
 import {DataModels} from '@process-engine/management_api_contracts';
 import {IDiagram, ISolution} from '@process-engine/solutionexplorer.contracts';
 import {IFileChangedCallback, ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repository.contracts';
@@ -15,7 +15,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   private _httpClient: IHttpClient;
 
-  private _managementApi: ManagementApiClientService;
+  private _managementApi: ManagementApiClient;
   private _identity: IIdentity;
   private _externalAccessorBaseRoute: string;
 
@@ -36,7 +36,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
       pathspec = pathspec.substr(0, pathspec.length - 1);
     }
 
-    const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
+    const managementApi: ManagementApiClient = this._createManagementClient(pathspec);
     // test connection
     await managementApi.getProcessModels(identity);
 
@@ -65,7 +65,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   public async saveSolution(solution: ISolution, pathspec?: string): Promise<void> {
     if (pathspec) {
 
-      const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
+      const managementApi: ManagementApiClient = this._createManagementClient(pathspec);
 
       solution.uri = pathspec;
       solution.diagrams.forEach((diagram: IDiagram) => {
@@ -100,7 +100,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
     if (pathspec) {
 
-      const managementApi: ManagementApiClientService = this._createManagementClient(pathspec);
+      const managementApi: ManagementApiClient = this._createManagementClient(pathspec);
       await managementApi.updateProcessDefinitionsByName(this._identity, diagramToSave.id, payload);
 
       return;
@@ -118,16 +118,16 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     this._managementApi.deleteProcessDefinitionsByProcessModelId(this._identity, diagram.id);
   }
 
-  private _createManagementClient(baseRoute: string): ManagementApiClientService {
+  private _createManagementClient(baseRoute: string): ManagementApiClient {
     const externalAccessor: ExternalAccessor = new ExternalAccessor(this._httpClient);
     this._externalAccessorBaseRoute = (externalAccessor as any).baseUrl = `${baseRoute}/${(externalAccessor as any).baseUrl}`;
 
-    const managementApi: ManagementApiClientService = new ManagementApiClientService(externalAccessor);
+    const managementApi: ManagementApiClient = new ManagementApiClient(externalAccessor);
 
     return managementApi;
   }
 
-  private _getBaseRoute(managementApi: ManagementApiClientService): string {
+  private _getBaseRoute(managementApi: ManagementApiClient): string {
     return this._externalAccessorBaseRoute;
   }
 
@@ -143,7 +143,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     };
   }
 
-  private _mapProcessModelToDiagram(processModel: DataModels.ProcessModels.ProcessModel, managementApi: ManagementApiClientService): IDiagram {
+  private _mapProcessModelToDiagram(processModel: DataModels.ProcessModels.ProcessModel, managementApi: ManagementApiClient): IDiagram {
     const baseRoute: string = this._getBaseRoute(managementApi);
 
     const diagramUri: string = `${baseRoute}/${processModel.id}`;
