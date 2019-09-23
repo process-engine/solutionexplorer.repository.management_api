@@ -22,8 +22,8 @@
     "@essential-projects/iam_contracts": "^3.6.0",
     "@process-engine/management_api_client": "6.0.0",
     "@process-engine/management_api_contracts": "12.0.0",
-    "@process-engine/solutionexplorer.contracts": "1.0.1",
-    "@process-engine/solutionexplorer.repository.contracts": "4.2.0",
+    "@process-engine/solutionexplorer.contracts": "feature~use_eslint_and_tsc",
+    "@process-engine/solutionexplorer.repository.contracts": "feature~use_eslint_and_tsc",
     "@types/express": "^4.16.0"
   },
   "devDependencies": {
