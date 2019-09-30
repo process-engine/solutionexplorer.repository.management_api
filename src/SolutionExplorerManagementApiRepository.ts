@@ -37,8 +37,6 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
     }
 
     const managementApi = this.createManagementClient(pathspec);
-    // test connection
-    await managementApi.getProcessModels(identity);
 
     this.managementApi = managementApi;
     this.identity = identity;
