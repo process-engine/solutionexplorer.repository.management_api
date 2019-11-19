@@ -1,6 +1,6 @@
 {
   "name": "@process-engine/solutionexplorer.repository.management_api",
-  "version": "3.3.0",
+  "version": "3.3.0-alpha.1",
   "description": "The SolutionExplorer repository for a processengine management api.",
   "main": "dist/amd/index.js",
   "typings": "dist/index.d.ts",
