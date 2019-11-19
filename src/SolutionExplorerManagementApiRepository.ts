@@ -165,7 +165,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   private diagramListsAreEqual(firstDiagramList: Array<IDiagram>, secondDiagramList: Array<IDiagram>): boolean {
     if (firstDiagramList.length !== secondDiagramList.length) {
-      return true;
+      return false;
     }
 
     return firstDiagramList.every((firstDiagram: IDiagram): boolean => {
