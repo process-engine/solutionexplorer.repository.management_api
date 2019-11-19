@@ -21,12 +21,12 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   private identity: IIdentity;
   private externalAccessorBaseRoute: string;
 
+  private isPolling = false;
+
   private eventListeners: Map<string, Function> = new Map<string, Function>();
 
   constructor(httpClient: IHttpClient) {
     this.httpClient = httpClient;
-
-    this.startPollingForDiagramChange();
   }
 
   public watchFile(filepath: string, callback: IFileChangedCallback): void {
@@ -38,9 +38,13 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   public watchSolution(callback: Function): string {
-    const eventListenerId: string = uuid.v4();
+    const eventListenerId: string = uuid();
 
     this.eventListeners.set(eventListenerId, callback);
+
+    if (!this.isPolling) {
+      this.startPollingForDiagramChange();
+    }
 
     return eventListenerId;
   }
@@ -135,6 +139,8 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   private async startPollingForDiagramChange(): Promise<void> {
+    this.isPolling = true;
+
     const diagrams: Array<IDiagram> = await this.getDiagrams();
 
     this.pollForDiagramChange(diagrams);
