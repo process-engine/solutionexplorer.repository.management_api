@@ -6,6 +6,8 @@ import {DataModels} from '@process-engine/management_api_contracts';
 import {IDiagram, ISolution} from '@process-engine/solutionexplorer.contracts';
 import {IFileChangedCallback, ISolutionExplorerRepository} from '@process-engine/solutionexplorer.repository.contracts';
 
+import {v4 as uuid} from 'node-uuid';
+
 interface IParsedDiagramUri {
   baseRoute: string;
   processModelId: string;
@@ -19,8 +21,12 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   private identity: IIdentity;
   private externalAccessorBaseRoute: string;
 
+  private eventListeners: Map<string, Function> = new Map<string, Function>();
+
   constructor(httpClient: IHttpClient) {
     this.httpClient = httpClient;
+
+    this.startPollingForDiagramChange();
   }
 
   public watchFile(filepath: string, callback: IFileChangedCallback): void {
@@ -29,6 +35,18 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   public unwatchFile(filepath: string): void {
     throw new Error('Method not supported.');
+  }
+
+  public watchSolution(callback: Function): string {
+    const eventListenerId: string = uuid.v4();
+
+    this.eventListeners.set(eventListenerId, callback);
+
+    return eventListenerId;
+  }
+
+  public unwatchSolution(eventListenerId: string): void {
+    this.eventListeners.delete(eventListenerId);
   }
 
   public async openPath(pathspec: string, identity: IIdentity): Promise<void> {
@@ -114,6 +132,45 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   public async deleteDiagram(diagram: IDiagram): Promise<void> {
     this.managementApi.deleteProcessDefinitionsByProcessModelId(this.identity, diagram.id);
+  }
+
+  private async startPollingForDiagramChange(): Promise<void> {
+    const diagrams: Array<IDiagram> = await this.getDiagrams();
+
+    this.pollForDiagramChange(diagrams);
+  }
+
+  private async pollForDiagramChange(diagrams: Array<IDiagram>): Promise<void> {
+    setTimeout(async () => {
+      const newDiagrams: Array<IDiagram> = await this.getDiagrams();
+
+      const diagramsChanged = !this.diagramListsAreEqual(diagrams, newDiagrams);
+      if (diagramsChanged) {
+        const callbacks: IterableIterator<Function> = this.eventListeners.values();
+
+        for (const callback of callbacks) {
+          callback();
+        }
+      }
+
+      this.pollForDiagramChange(newDiagrams);
+    }, 200);
+  }
+
+  private diagramListsAreEqual(firstDiagramList: Array<IDiagram>, secondDiagramList: Array<IDiagram>): boolean {
+    if (firstDiagramList.length !== secondDiagramList.length) {
+      return true;
+    }
+
+    return firstDiagramList.every((firstDiagram: IDiagram): boolean => {
+      return secondDiagramList.some((secondDiagram: IDiagram): boolean => {
+        const diagramsAreEqual: boolean = firstDiagram.id === secondDiagram.id
+                                       && firstDiagram.name === secondDiagram.name
+                                       && firstDiagram.xml.trim() === secondDiagram.xml.trim();
+
+        return diagramsAreEqual;
+      });
+    });
   }
 
   private createManagementClient(baseRoute: string): ManagementApiClient {
