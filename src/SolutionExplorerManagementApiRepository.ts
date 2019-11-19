@@ -148,7 +148,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   private async pollForDiagramChange(diagrams: Array<IDiagram>): Promise<void> {
     setTimeout(async () => {
-      const newDiagrams: Array<IDiagram> = await this.getDiagrams();
+      const newDiagrams = await this.getDiagrams();
 
       const diagramsChanged = !this.diagramListsAreEqual(diagrams, newDiagrams);
       if (diagramsChanged) {
