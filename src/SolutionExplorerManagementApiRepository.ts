@@ -141,14 +141,25 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   private async startPollingForDiagramChange(): Promise<void> {
     this.isPolling = true;
 
-    const diagrams: Array<IDiagram> = await this.getDiagrams();
+    let diagrams: Array<IDiagram>;
+    try {
+      diagrams = await this.getDiagrams();
+    } catch {
+      // Do nothing
+    }
 
     this.pollForDiagramChange(diagrams);
   }
 
   private async pollForDiagramChange(diagrams: Array<IDiagram>): Promise<void> {
     setTimeout(async () => {
-      const newDiagrams = await this.getDiagrams();
+      let newDiagrams;
+
+      try {
+        newDiagrams = await this.getDiagrams();
+      } catch {
+        // Do nothing
+      }
 
       const diagramsChanged = !this.diagramListsAreEqual(diagrams, newDiagrams);
       if (diagramsChanged) {
@@ -164,6 +175,10 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   private diagramListsAreEqual(firstDiagramList: Array<IDiagram>, secondDiagramList: Array<IDiagram>): boolean {
+    if (firstDiagramList === undefined || secondDiagramList === undefined) {
+      return firstDiagramList === secondDiagramList;
+    }
+
     if (firstDiagramList.length !== secondDiagramList.length) {
       return false;
     }
