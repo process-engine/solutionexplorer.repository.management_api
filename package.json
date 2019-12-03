@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@essential-projects/eslint-config": "^1.0.6",
-    "@process-engine/ci_tools": "^2.0.0",
+    "@process-engine/ci_tools": "^2.2.1",
     "@types/node": "^12.7.8",
     "@types/node-fetch": "^2.5.2",
     "eslint": "^6.5.1",
