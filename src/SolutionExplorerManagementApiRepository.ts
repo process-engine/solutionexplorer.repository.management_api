@@ -1,4 +1,6 @@
-import {NotImplementedError} from '@essential-projects/errors_ts';
+import {
+  ForbiddenError, NotImplementedError, UnauthorizedError, isError,
+} from '@essential-projects/errors_ts';
 import {IHttpClient} from '@essential-projects/http_contracts';
 import {IIdentity} from '@essential-projects/iam_contracts';
 import {ExternalAccessor, ManagementApiClient} from '@process-engine/management_api_client';
@@ -22,6 +24,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   private externalAccessorBaseRoute: string;
 
   private isPolling = false;
+  private pollingTimeout: NodeJS.Timeout;
 
   private eventListeners: Map<string, Function> = new Map<string, Function>();
 
@@ -51,6 +54,8 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
 
   public unwatchSolution(eventListenerId: string): void {
     this.eventListeners.delete(eventListenerId);
+    this.isPolling = false;
+    clearTimeout(this.pollingTimeout);
   }
 
   public async openPath(pathspec: string, identity: IIdentity): Promise<void> {
@@ -152,13 +157,20 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
   }
 
   private async pollForDiagramChange(diagrams: Array<IDiagram>): Promise<void> {
-    setTimeout(async () => {
+    if (!this.isPolling) {
+      return;
+    }
+
+    this.pollingTimeout = setTimeout(async () => {
       let newDiagrams;
 
       try {
         newDiagrams = await this.getDiagrams();
-      } catch {
-        // Do nothing
+      } catch (error) {
+        if (isError(error, UnauthorizedError) || isError(error, ForbiddenError)) {
+          this.isPolling = false;
+          clearTimeout(this.pollingTimeout);
+        }
       }
 
       const diagramsChanged = !this.diagramListsAreEqual(diagrams, newDiagrams);
@@ -171,7 +183,7 @@ export class SolutionExplorerManagementApiRepository implements ISolutionExplore
       }
 
       this.pollForDiagramChange(newDiagrams);
-    }, 200);
+    }, 800);
   }
 
   private diagramListsAreEqual(firstDiagramList: Array<IDiagram>, secondDiagramList: Array<IDiagram>): boolean {
